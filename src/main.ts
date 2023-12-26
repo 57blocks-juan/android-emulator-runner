@@ -191,10 +191,7 @@ async function run() {
             cwd: workingDirectory,
           });
         }
-      } catch (error) {
-        console.log('Error happens while exec script: ', error);
-        console.log('Error type: ', typeof(error));
-        
+      } catch (error) {  
         core.setFailed(error instanceof Error ? error.message : (error as string));
       }
       console.log(`::endgroup::`);
@@ -233,6 +230,8 @@ async function run() {
         await exec.exec('sh', ['-c', script]);
       }
     } catch (error) {
+      console.log('Error happens while exec script: ', error);
+      console.log('Error type: ', typeof(error));
       core.setFailed(error instanceof Error ? error.message : (error as string));
     }
 
