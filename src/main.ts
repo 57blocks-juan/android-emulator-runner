@@ -197,47 +197,60 @@ async function run() {
       console.log(`::endgroup::`);
     }
 
-    // launch an emulator
-    await launchEmulator(
-      apiLevel,
-      target,
-      arch,
-      profile,
-      cores,
-      ramSize,
-      heapSize,
-      sdcardPathOrSize,
-      diskSize,
-      avdName,
-      forceAvdCreation,
-      emulatorBootTimeout,
-      emulatorOptions,
-      disableAnimations,
-      disableSpellchecker,
-      disableLinuxHardwareAcceleration,
-      enableHardwareKeyboard
-    );
+    let runtimes = 3;
+    let runSuccess = false;
 
-    // execute the custom script
-    try {
-      // move to custom working directory if set
-      if (workingDirectory) {
-        process.chdir(workingDirectory);
+    while (runtimes > 0 && !runSuccess) {
+      // execute the custom script
+      try {
+        console.log('Start to launchEmulator and execute scripts: ', runtimes);
+        
+        // launch an emulator
+        await launchEmulator(
+          apiLevel,
+          target,
+          arch,
+          profile,
+          cores,
+          ramSize,
+          heapSize,
+          sdcardPathOrSize,
+          diskSize,
+          avdName,
+          forceAvdCreation,
+          emulatorBootTimeout,
+          emulatorOptions,
+          disableAnimations,
+          disableSpellchecker,
+          disableLinuxHardwareAcceleration,
+          enableHardwareKeyboard
+        );
+        // move to custom working directory if set
+        if (workingDirectory) {
+          process.chdir(workingDirectory);
+        }
+        for (const script of scripts) {
+          // use array form to avoid various quote escaping problems
+          // caused by exec(`sh -c "${script}"`)
+          await exec.exec('sh', ['-c', script]);
+          runSuccess = true;
+          console.log('run successful now');
+          runtimes -= 1;
+        }
+      } catch (error) {
+        console.log('Error happens while exec script: ', error);
+        console.log('Error type: ', typeof (error));
+        runSuccess = false;
+        runtimes -= 1;
+        console.log('runtimes: ', runtimes);
       }
-      for (const script of scripts) {
-        // use array form to avoid various quote escaping problems
-        // caused by exec(`sh -c "${script}"`)
-        await exec.exec('sh', ['-c', script]);
-      }
-    } catch (error) {
-      console.log('Error happens while exec script: ', error);
-      console.log('Error type: ', typeof(error));
-      core.setFailed(error instanceof Error ? error.message : (error as string));
     }
 
     // finally kill the emulator
     await killEmulator();
   } catch (error) {
+    console.log('Error happens here while exec script: ', error);
+    console.log('Error type here: ', typeof(error));
     // kill the emulator so the action can exit
     await killEmulator();
     core.setFailed(error instanceof Error ? error.message : (error as string));
