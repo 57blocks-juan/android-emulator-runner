@@ -197,6 +197,8 @@ async function run() {
       console.log(`::endgroup::`);
     }
 
+    console.log(`::group::Launch Emulator and execute scripts`);
+
     let runtimes = 3;
     let runSuccess = false;
 
@@ -253,6 +255,8 @@ async function run() {
         console.log('runtimes: ', runtimes);
       }
     }
+
+    console.log(`::endgroup::`);
 
     // finally kill the emulator
     await killEmulator();
