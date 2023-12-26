@@ -18,6 +18,7 @@ import * as exec from '@actions/exec';
 import { parseScript } from './script-parser';
 import { getChannelId } from './channel-id-mapper';
 import { accessSync, constants } from 'fs';
+import { log } from 'console';
 
 async function run() {
   try {
@@ -191,6 +192,9 @@ async function run() {
           });
         }
       } catch (error) {
+        console.log('Error happens while exec script: ', error);
+        console.log('Error type: ', typeof(error));
+        
         core.setFailed(error instanceof Error ? error.message : (error as string));
       }
       console.log(`::endgroup::`);
