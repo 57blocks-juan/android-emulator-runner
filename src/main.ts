@@ -200,9 +200,13 @@ async function run() {
     let runtimes = 3;
     let runSuccess = false;
 
+    console.log(`runtimes: `);
+    console.log(runtimes);
+
     while (runtimes > 0 && !runSuccess) {
       // execute the custom script
       try {
+        console.log(`Start to launchEmulator and execute scripts`);
         console.log('Start to launchEmulator and execute scripts: ', runtimes);
         
         // launch an emulator
@@ -238,6 +242,10 @@ async function run() {
           runtimes -= 1;
         }
       } catch (error) {
+        console.log(`Error happens while exec script`);
+        console.log(error);
+        console.log(`Error type`);
+        console.log(typeof (error));
         console.log('Error happens while exec script: ', error);
         console.log('Error type: ', typeof (error));
         runSuccess = false;
@@ -249,6 +257,11 @@ async function run() {
     // finally kill the emulator
     await killEmulator();
   } catch (error) {
+    console.log(`Error happens here while exec script`);
+    console.log(error);
+    console.log(`Error type here`);
+    console.log(typeof(error));
+    
     console.log('Error happens here while exec script: ', error);
     console.log('Error type here: ', typeof(error));
     // kill the emulator so the action can exit
