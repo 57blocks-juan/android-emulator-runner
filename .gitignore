@@ -101,3 +101,4 @@ typings/
 # IntelliJ IDEA
 .idea
 *.iml
+node_modules

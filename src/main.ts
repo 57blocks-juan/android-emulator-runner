@@ -208,7 +208,6 @@ async function run() {
     while (runtimes > 0 && !runSuccess) {
       // execute the custom script
       try {
-        console.log(`Start to launchEmulator and execute scripts`);
         console.log('Start to launchEmulator and execute scripts: ', runtimes);
         
         // launch an emulator
@@ -232,7 +231,8 @@ async function run() {
           enableHardwareKeyboard
         );
         // move to custom working directory if set
-        if (workingDirectory) {
+        if (workingDirectory && runtimes == 3) {
+          // only need to create directory at the first time
           process.chdir(workingDirectory);
         }
         for (const script of scripts) {
@@ -244,15 +244,10 @@ async function run() {
           runtimes -= 1;
         }
       } catch (error) {
-        console.log(`Error happens while exec script`);
-        console.log(error);
-        console.log(`Error type`);
-        console.log(typeof (error));
-        console.log('Error happens while exec script: ', error);
+        console.log('Error happens while launchEmulator and exec script: ', error);
         console.log('Error type: ', typeof (error));
         runSuccess = false;
         runtimes -= 1;
-        console.log('runtimes: ', runtimes);
       }
     }
 
@@ -261,13 +256,8 @@ async function run() {
     // finally kill the emulator
     await killEmulator();
   } catch (error) {
-    console.log(`Error happens here while exec script`);
-    console.log(error);
-    console.log(`Error type here`);
-    console.log(typeof(error));
-    
-    console.log('Error happens here while exec script: ', error);
-    console.log('Error type here: ', typeof(error));
+    console.log('Error happens in the whole process: ', error);
+    console.log('Error type in the whole process: ', typeof(error));
     // kill the emulator so the action can exit
     await killEmulator();
     core.setFailed(error instanceof Error ? error.message : (error as string));
