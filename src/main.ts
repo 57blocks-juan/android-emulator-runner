@@ -199,11 +199,8 @@ async function run() {
 
     console.log(`::group::Launch Emulator and execute scripts`);
 
-    let runtimes = 3;
+    let runtimes = 4;
     let runSuccess = false;
-
-    console.log(`runtimes: `);
-    console.log(runtimes);
 
     while (runtimes > 0 && !runSuccess) {
       // execute the custom script
@@ -245,7 +242,6 @@ async function run() {
         }
       } catch (error) {
         console.log('Error happens while launchEmulator and exec script: ', error);
-        console.log('Error type: ', typeof (error));
         runSuccess = false;
         runtimes -= 1;
       }
@@ -257,7 +253,6 @@ async function run() {
     await killEmulator();
   } catch (error) {
     console.log('Error happens in the whole process: ', error);
-    console.log('Error type in the whole process: ', typeof(error));
     // kill the emulator so the action can exit
     await killEmulator();
     core.setFailed(error instanceof Error ? error.message : (error as string));
