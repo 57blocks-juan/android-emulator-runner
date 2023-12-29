@@ -199,13 +199,13 @@ async function run() {
 
     console.log(`::group::Launch Emulator and execute scripts`);
 
-    let runtimes = 4;
+    let runTimes = 4;
     let runSuccess = false;
 
-    while (runtimes > 0 && !runSuccess) {
+    while (runTimes > 0 && !runSuccess) {
       // execute the custom script
       try {
-        console.log('Start to launchEmulator and execute scripts: ', runtimes);
+        console.log('Start to launchEmulator and execute scripts: ', runTimes);
         
         // launch an emulator
         await launchEmulator(
@@ -228,7 +228,7 @@ async function run() {
           enableHardwareKeyboard
         );
         // move to custom working directory if set
-        if (workingDirectory && runtimes == 3) {
+        if (workingDirectory && runTimes == 3) {
           // only need to create directory at the first time
           process.chdir(workingDirectory);
         }
@@ -238,12 +238,12 @@ async function run() {
           await exec.exec('sh', ['-c', script]);
           runSuccess = true;
           console.log('run successful now');
-          runtimes -= 1;
+          runTimes -= 1;
         }
       } catch (error) {
         console.log('Error happens while launchEmulator and exec script: ', error);
         runSuccess = false;
-        runtimes -= 1;
+        runTimes -= 1;
       }
     }
 

@@ -23,6 +23,11 @@ export async function launchEmulator(
   disableLinuxHardwareAcceleration: boolean,
   enableHardwareKeyboard: boolean
 ): Promise<void> {
+
+  console.log(`Restart adb server process.`);
+  await exec.exec(`adb kill-server`);
+  await exec.exec(`adb start-server`);
+
   // create a new AVD if AVD directory does not already exist or forceAvdCreation is true
   const avdPath = `${process.env.ANDROID_AVD_HOME}/${avdName}.avd`;
   if (!fs.existsSync(avdPath) || forceAvdCreation) {
@@ -66,6 +71,7 @@ export async function launchEmulator(
   await exec.exec(`sh -c \\"${process.env.ANDROID_HOME}/emulator/emulator -avd "${avdName}" ${emulatorOptions} &"`, [], {
     listeners: {
       stderr: (data: Buffer) => {
+        console.log('Error while starting emulator: ', data.toString());
         if (data.toString().includes('invalid command-line parameter')) {
           throw new Error(data.toString());
         }
