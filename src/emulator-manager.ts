@@ -23,76 +23,77 @@ export async function launchEmulator(
   disableLinuxHardwareAcceleration: boolean,
   enableHardwareKeyboard: boolean
 ): Promise<void> {
-  try {
-    console.log(`::group::Launch Emulator`);
-    // create a new AVD if AVD directory does not already exist or forceAvdCreation is true
-    const avdPath = `${process.env.ANDROID_AVD_HOME}/${avdName}.avd`;
-    if (!fs.existsSync(avdPath) || forceAvdCreation) {
-      const profileOption = profile.trim() !== '' ? `--device '${profile}'` : '';
-      const sdcardPathOrSizeOption = sdcardPathOrSize.trim() !== '' ? `--sdcard '${sdcardPathOrSize}'` : '';
-      console.log(`Creating AVD.`);
-      await exec.exec(
-        `sh -c \\"echo no | avdmanager create avd --force -n "${avdName}" --abi '${target}/${arch}' --package 'system-images;android-${apiLevel};${target};${arch}' ${profileOption} ${sdcardPathOrSizeOption}"`
-      );
-    }
 
-    if (cores) {
-      await exec.exec(`sh -c \\"printf 'hw.cpu.ncore=${cores}\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
-    }
+  console.log(`Restart adb server process.`);
+  await exec.exec(`adb kill-server`);
+  await exec.exec(`adb start-server`);
 
-    if (ramSize) {
-      await exec.exec(`sh -c \\"printf 'hw.ramSize=${ramSize}\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
-    }
+  // create a new AVD if AVD directory does not already exist or forceAvdCreation is true
+  const avdPath = `${process.env.ANDROID_AVD_HOME}/${avdName}.avd`;
+  if (!fs.existsSync(avdPath) || forceAvdCreation) {
+    const profileOption = profile.trim() !== '' ? `--device '${profile}'` : '';
+    const sdcardPathOrSizeOption = sdcardPathOrSize.trim() !== '' ? `--sdcard '${sdcardPathOrSize}'` : '';
+    console.log(`Creating AVD.`);
+    await exec.exec(
+      `sh -c \\"echo no | avdmanager create avd --force -n "${avdName}" --abi '${target}/${arch}' --package 'system-images;android-${apiLevel};${target};${arch}' ${profileOption} ${sdcardPathOrSizeOption}"`
+    );
+  }
 
-    if (heapSize) {
-      await exec.exec(`sh -c \\"printf 'hw.heapSize=${heapSize}\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
-    }
+  if (cores) {
+    await exec.exec(`sh -c \\"printf 'hw.cpu.ncore=${cores}\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
+  }
 
-    if (enableHardwareKeyboard) {
-      await exec.exec(`sh -c \\"printf 'hw.keyboard=yes\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
-    }
+  if (ramSize) {
+    await exec.exec(`sh -c \\"printf 'hw.ramSize=${ramSize}\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
+  }
 
-    if (diskSize) {
-      await exec.exec(`sh -c \\"printf 'disk.dataPartition.size=${diskSize}\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
-    }
+  if (heapSize) {
+    await exec.exec(`sh -c \\"printf 'hw.heapSize=${heapSize}\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
+  }
 
-    //turn off hardware acceleration on Linux
-    if (process.platform === 'linux' && disableLinuxHardwareAcceleration) {
-      console.log('Disabling Linux hardware acceleration.');
-      emulatorOptions += ' -accel off';
-    }
+  if (enableHardwareKeyboard) {
+    await exec.exec(`sh -c \\"printf 'hw.keyboard=yes\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
+  }
 
-    // start emulator
-    console.log('Starting emulator.');
+  if (diskSize) {
+    await exec.exec(`sh -c \\"printf 'disk.dataPartition.size=${diskSize}\n' >> ${process.env.ANDROID_AVD_HOME}/"${avdName}".avd"/config.ini`);
+  }
 
-    await exec.exec(`sh -c \\"${process.env.ANDROID_HOME}/emulator/emulator -avd "${avdName}" ${emulatorOptions} &"`, [], {
-      listeners: {
-        stderr: (data: Buffer) => {
-          if (data.toString().includes('invalid command-line parameter')) {
-            throw new Error(data.toString());
-          }
-        },
+  //turn off hardware acceleration on Linux
+  if (process.platform === 'linux' && disableLinuxHardwareAcceleration) {
+    console.log('Disabling Linux hardware acceleration.');
+    emulatorOptions += ' -accel off';
+  }
+
+  // start emulator
+  console.log('Starting emulator.');
+
+  await exec.exec(`sh -c \\"${process.env.ANDROID_HOME}/emulator/emulator -avd "${avdName}" ${emulatorOptions} &"`, [], {
+    listeners: {
+      stderr: (data: Buffer) => {
+        console.log('Error while starting emulator: ', data.toString());
+        if (data.toString().includes('invalid command-line parameter')) {
+          throw new Error(data.toString());
+        }
       },
-    });
+    },
+  });
 
-    // wait for emulator to complete booting
-    await waitForDevice(emulatorBootTimeout);
-    await exec.exec(`adb shell input keyevent 82`);
+  // wait for emulator to complete booting
+  await waitForDevice(emulatorBootTimeout);
+  await exec.exec(`adb shell input keyevent 82`);
 
-    if (disableAnimations) {
-      console.log('Disabling animations.');
-      await exec.exec(`adb shell settings put global window_animation_scale 0.0`);
-      await exec.exec(`adb shell settings put global transition_animation_scale 0.0`);
-      await exec.exec(`adb shell settings put global animator_duration_scale 0.0`);
-    }
-    if (disableSpellChecker) {
-      await exec.exec(`adb shell settings put secure spell_checker_enabled 0`);
-    }
-    if (enableHardwareKeyboard) {
-      await exec.exec(`adb shell settings put secure show_ime_with_hard_keyboard 0`);
-    }
-  } finally {
-    console.log(`::endgroup::`);
+  if (disableAnimations) {
+    console.log('Disabling animations.');
+    await exec.exec(`adb shell settings put global window_animation_scale 0.0`);
+    await exec.exec(`adb shell settings put global transition_animation_scale 0.0`);
+    await exec.exec(`adb shell settings put global animator_duration_scale 0.0`);
+  }
+  if (disableSpellChecker) {
+    await exec.exec(`adb shell settings put secure spell_checker_enabled 0`);
+  }
+  if (enableHardwareKeyboard) {
+    await exec.exec(`adb shell settings put secure show_ime_with_hard_keyboard 0`);
   }
 }
 
